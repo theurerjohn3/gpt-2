@@ -11,10 +11,10 @@ import time
 import tqdm
 from tensorflow.core.protobuf import rewriter_config_pb2
 
-import model, sample, encoder
-from load_dataset import load_dataset, Sampler
-from accumulate import AccumulatingOptimizer
-import memory_saving_gradients
+from src import model, sample, encoder
+from src.load_dataset import load_dataset, Sampler
+from src.accumulate import AccumulatingOptimizer
+from src import memory_saving_gradients
 
 CHECKPOINT_DIR = 'checkpoint'
 SAMPLE_DIR = 'samples'
@@ -52,6 +52,7 @@ parser.add_argument('--val_batch_size', metavar='SIZE', type=int, default=2, hel
 parser.add_argument('--val_batch_count', metavar='N', type=int, default=40, help='Number of batches for validation.')
 parser.add_argument('--val_every', metavar='STEPS', type=int, default=0, help='Calculate validation loss every STEPS steps.')
 
+parser.add_argument('--sample_batch_size', metavar='SIZE', type=int, required=False, default=1024, help='size of the samples in each batch')
 
 def maketree(path):
     try:
@@ -185,7 +186,7 @@ def main():
             # Sample from validation set once with fixed seed to make
             # it deterministic during training as well as across runs.
             val_data_sampler = Sampler(val_chunks, seed=1)
-            val_batches = [[val_data_sampler.sample(1024) for _ in range(args.val_batch_size)]
+            val_batches = [[val_data_sampler.sample(args.sample_batch_size) for _ in range(args.val_batch_size)]
                            for _ in range(args.val_batch_count)]
 
         counter = 1
@@ -248,7 +249,7 @@ def main():
                     loss=v_val_loss))
 
         def sample_batch():
-            return [data_sampler.sample(1024) for _ in range(args.batch_size)]
+            return [data_sampler.sample(args.sample_batch_size) for _ in range(args.batch_size)]
 
 
         avg_loss = (0.0, 0.0)
